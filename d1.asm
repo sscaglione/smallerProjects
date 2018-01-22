@@ -63,6 +63,22 @@ start:
         				; since the registers are set, we don't need to worry about
         				; a hardware device altering them anymore
 
+		mov ah, 0Eh		; set function code to 0Eh, which is for teletype
+		mov al, 43h		; AL is char register, 43h is ASCII for 'C'
+		mov bh, 0h		; BH is page number, which we want to be zero
+		int 10h			; issue interrupt
+
+		mov al, 44h		; 44h is ASCII for 'D'
+		int 10h			; issue interrupt
+
+		mov si, thestring	; point the register SI to the string we want to print
+
+		call print			; the call instruction causes the CPU to execute
+							; instructions at the given label until the ret
+							; instruction is hit. call puts the current instruction
+							; pointer on the stack before it goes to the label ret
+							; restores the instruction pointer by reading it from
+							; the stack
 	jmp $
 
 	; the lines below are nasm directives, NOT x86 instructions
@@ -72,6 +88,34 @@ start:
 	; this is by convention, since the firmware validates the bootloader
 	; by reading the last two bytes and confirming that they are AA55
 	; the firmware will not execute the bootloader without it
+
+	;; START OF PROCEDURE AREA ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	; start of procedure print
+	print:
+		mov ah, 0Eh		; set the function code to teletype to prepare for
+						; the software interrupt
+
+		loopStart:		; start a loop area
+			lodsb			; load a byte from DS:SI into the a register
+			cmp al, 0		; check if the register is null or not
+			je loopExit		; if the register is null, jump to an exit label
+			int 10h			; if the register is not null, issue 10h to print it
+			jmp loopStart	; go back to the loop label
+
+		loopExit:
+			ret				; ret is the CPU instruction meaning return
+
+	; end of procedure print
+
+	;; END OF PROCEDURE AREA ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	;; START OF DATA AREA ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+	thestring db 'mcduck', 0
+
+	;; END OF DATA AREA ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 	times 510-($-$$) db 0
 	dw 0xAA55	; BIOS looks for AA55 at the end of the sector
 
