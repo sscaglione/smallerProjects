@@ -79,6 +79,7 @@ start:
 							; pointer on the stack before it goes to the label ret
 							; restores the instruction pointer by reading it from
 							; the stack
+		call readWrite
 	jmp $
 
 	; the lines below are nasm directives, NOT x86 instructions
@@ -107,6 +108,23 @@ start:
 			ret				; ret is the CPU instruction meaning return
 
 	; end of procedure print
+
+	; beginning of procedure readWrite
+	readWrite:
+		rwLoop:
+			mov ah, 0		; move 0 into the AH register
+			int 16h			; read keyboard input
+			cmp al, 0Ah		; check if it's the newline char
+			je newLine		; if it is, go to newLine
+			mov ah, 0Eh		; if it's not denote teletype mode
+			int 10h			; then issue interrupt
+			jmp rwLoop		; then start the loop again
+
+		newLine:
+			mov ah, 0Eh
+			int 10h
+			ret
+	; end of procedure readWrite
 
 	;; END OF PROCEDURE AREA ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
